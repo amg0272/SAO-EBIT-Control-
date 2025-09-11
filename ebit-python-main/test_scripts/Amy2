@@ -1,0 +1,38 @@
+import nidaqmx
+from nidaqmx.types import CtrTime
+import numpy as np
+import time
+from nidaqmx.stream_writers import CounterWriter
+from nidaqmx.constants import *
+
+f = 1000 #desired clock frequency
+duty = .5
+#tickt = 1/f # period
+#t = 2  # desired total cylce time
+#Nosamps = int(t/tickt) # number of samples needed to get desired time
+#print(Nosamps)
+
+#another way to setup a clock..
+with nidaqmx.Task() as task:
+    task.co_channels.add_co_pulse_chan_time(counter = "pci-6733/ctr0")
+    task.timing.cfg_implicit_timing(sample_mode=AcquisitionType.CONTINUOUS)
+    cw = CounterWriter(task.out_stream, True)
+    task.start()
+    cw.write_one_sample_pulse_frequency(f,duty)
+    time.sleep(5)
+
+
+
+#setup a clock to use with DO channels
+#create task and add counter output channel (C0) to it
+# with nidaqmx.Task() as task:
+#     task.co_channels.add_co_pulse_chan_time(counter = "pci-6733/ctr0")
+#     task.timing.cfg_implicit_timing(sample_mode=AcquisitionType.CONTINUOUS)
+#     cw = CounterWriter(task.out_stream, True)
+#     task.start()
+#     f = np.array([50.0,50.0,1000])
+#     duty = np.array([.5,.1,.5])
+#     print(duty.shape)
+#     cw.write_many_sample_pulse_frequency(f,duty)
+#     time.sleep(1)
+#     #task.wait_until_done()

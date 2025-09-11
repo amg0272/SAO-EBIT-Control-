@@ -1,0 +1,9 @@
+Cycle Time (s),Drifttube2 Time (ms),Drifttube2,Drifttube3 Time (ms),Drifttube3,High Voltage Time (ms),High Voltage,Anode Time (ms),Anode,AO: MeVVA Trigger Time (ms),AO: MeVVA Trigger,DO: Trigger 1 Time (ms),DO: Trigger 1,DO: Trigger 2 Time (ms),DO: Trigger 2,AO: Trigger 1 Time (ms),AO: Trigger 1,AO: Trigger 2 Time (ms),AO: Trigger 2,AO: Trigger 3 Time (ms),AO: Trigger 3,AO: Trigger 4 Time (ms),AO: Trigger 4
+0.05,0,1,,,0,10,,,0,0,,,,,0,0,,,,,,
+,20,1,,,1,10,,,25,1,,,,,10,1,,,,,,
+,22,450,,,2,4500,,,,,,,,,20,0,,,,,,
+,25,450,,,5,4500,,,,,,,,,40,1,,,,,,
+,26,300,,,6,2000,,,,,,,,,49,0,,,,,,
+,27,460,,,7,4600,,,,,,,,,,,,,,,,
+,28,450,,,8,2000,,,,,,,,,,,,,,,,
+,40,1,,,20,50,,,,,,,,,,,,,,,,

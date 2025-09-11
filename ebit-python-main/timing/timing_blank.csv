@@ -1,0 +1,6 @@
+Cycle Time (s),Drifttube2 Time (ms),Drifttube2,Drifttube3 Time (ms),Drifttube3,High Voltage Time (ms),High Voltage,Anode Time (ms),Anode,AO: MeVVA Trigger Time (ms),AO: MeVVA Trigger,DO: Trigger 1 Time (ms),DO: Trigger 1,DO: Trigger 2 Time (ms),DO: Trigger 2,AO: Trigger 1 Time (ms),AO: Trigger 1,AO: Trigger 2 Time (ms),AO: Trigger 2,AO: Trigger 3 Time (ms),AO: Trigger 3,AO: Trigger 4 Time (ms),AO: Trigger 4,,,,Example Time (ms),Example,,"Guide: Enter pairs of times and voltages for each component. Times are in ms after the start of the cycle/loop up to the total cycle time (cell A2, in seconds). Times are absolute, not relative, so, e.g., 200ms and 220ms are 20ms apart. Leave columns blank to leave them out of the timing loop. "
+5,,,,,,,,,,,,,,,,,,,,,,,,,,0,6000,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,2000,6000,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,2100,8000,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,3000,8000,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,3100,6000,,
