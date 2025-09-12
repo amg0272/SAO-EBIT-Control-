@@ -644,7 +644,7 @@ class Dialog(QDialog):
 
         if (len(AO_plans)+len(DO_plans)+len(AO_trigger_plans)) > 0:
             self.update_timing_cycle_plot()
-            self.ebit_controller.start_timing_loop(AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_LPF=self.enable_low_pass_filter)
+            self.ebit_controller.start_timing_loop(AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_lpf=self.enable_low_pass_filter)
             self.timing_loop_start_stop_widgets["start_button"].setEnabled(False)
             self.timing_loop_start_stop_widgets["stop_button"].setEnabled(True)
             self.timing_cycle_widgets["timing_cycle_time_box"].setEnabled(False)
@@ -787,8 +787,8 @@ class Dialog(QDialog):
 
     def update_voltage(self, name):
         """Set a single static voltage or initiate a ramp."""
-        ret = self.ebit_controller.set_voltage(name,  self.input_widgets[name]["field"].value(),
-                                                    ramp_Vs = float(self.input_widgets[name]["ramp"].value()))
+        ret = self.ebit_controller.set_voltage(name, self.input_widgets[name]["field"].value(),
+                                               ramp_vs= float(self.input_widgets[name]["ramp"].value()))
         #ret is [1] or [0, new_value, model.output_max_volts, start_V (voltage before setting the new value)]
         if not ret[0]: #if the set voltage is too high or too low:
             #make a message box with the error
@@ -1001,7 +1001,7 @@ class Dialog(QDialog):
             msg.exec()
             return -1
         self.ebit_controller.start_custom_timing_loop(self.custom_timing_plan,
-                                                      enable_LPF=self.enable_low_pass_filter)
+                                                      enable_lpf=self.enable_low_pass_filter)
         for component_name in self.custom_timing_plan.keys():
             if component_name != "time_s" and "O:" not in component_name and "AI:" not in component_name:
                 self.input_widgets[component_name]["button"].setEnabled(False)
