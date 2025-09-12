@@ -55,7 +55,14 @@ class EbitDataModel:
             for row in csv_reader:
                 self.components[row["name"]] = EbitComponent(**row)
 
+    def __repr__(self):
+        for comp in self.components.values():
+            print(comp)
+
+    def __str__(self):
+        return "\n".join([comp.__str__() for comp in self.components.values()])
+
 
 if __name__ == "__main__":
     ebit = EbitDataModel()
-    print(ebit.components)
+    print(ebit)
