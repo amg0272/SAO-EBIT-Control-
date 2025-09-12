@@ -319,28 +319,31 @@ class EbitVoltageController:
         if self.ramp_task is not None:
             self.ramp_done_callback()
 
-        for key, value in self.ebit_data_model.components.items():
-            if "do:" in key:
-                self.set_digital(key, False)
-            elif value.output_card and "MeVVA Trigger Power" not in key:
+        for name, comp in self.ebit_data_model.components.items():
+            if "do:" in name.lower():
+                self.set_digital(name, False)
+            elif comp.output_card and "MeVVA Trigger Power" not in name:
                 with nidaqmx.Task() as task:
-                    task.ao_channels.add_ao_voltage_chan(f'{value.output_card}/{value.output_pin}',
-                                                         min_val=value.output_min_volts,
-                                                         max_val=value.output_max_volts)
+                    if comp.output_min_volts is None or comp.output_max_volts is None:
+                        raise ValueError(f'Component {name} has None in output_min_volts or output_max_volts.\n'
+                                         f'{comp}')
+                    task.ao_channels.add_ao_voltage_chan(f'{comp.output_card}/{comp.output_pin}',
+                                                         min_val=comp.output_min_volts,
+                                                         max_val=comp.output_max_volts)
                     task.write(0)
                     task.wait_until_done()
-                    self.ebit_data_model.components[key].output_voltage_value = 0
+                    self.ebit_data_model.components[name].output_voltage_comp = 0
 
         if turn_off_mevva_trigger_power:
             with nidaqmx.Task() as task:
-                key = "ao: MeVVA Trigger Power"
-                value = self.ebit_data_model.components[key]
-                task.ao_channels.add_ao_voltage_chan(f'{value.output_card}/{value.output_pin}',
-                                                     min_val=value.output_min_volts,
-                                                     max_val=value.output_max_volts)
+                name = "ao: MeVVA Trigger Power"
+                comp = self.ebit_data_model.components[name]
+                task.ao_channels.add_ao_voltage_chan(f'{comp.output_card}/{comp.output_pin}',
+                                                     min_val=comp.output_min_volts,
+                                                     max_val=comp.output_max_volts)
                 task.write(0)
                 task.wait_until_done()
-                self.ebit_data_model.components[key].output_voltage_value = 0
+                self.ebit_data_model.components[name].output_voltage_comp = 0
                 print("Turning off MeVVA Trigger Power")
 
     def set_voltage(self, name, new_value_v, ramp_vs=0):
@@ -449,8 +452,6 @@ class EbitVoltageController:
                     else:
                         value.input_current_value = None
                         print(f"Error reading {key} current.")
-
-                    print(key, value.input_current_value, data)
 
     def set_digital(self, name, new_value):
         model = self.ebit_data_model.components[name]

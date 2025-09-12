@@ -268,10 +268,10 @@ class Dialog(QDialog):
         layout.addWidget(QLabel("Delay (ms)"), 1, 5)
         layout.addWidget(QLabel("Enable"), 1, 6)
 
-        self.timing_components = {"Drifttube2":["0","450","20","200","200", "1"],
+        self.timing_components = {"Drifttube2":["0","300","0","5","1", "1"],
                                   "Drifttube3": ["0","450","20","200","200", "0"],
-                                  "High Voltage":["2000","10000","10","800","50", "1"],
-                                  "AO: MeVVA Trigger": ["0","1","0","1","410", "1"],
+                                  "High Voltage":["4000","9700","0","7","1", "1"],
+                                  "AO: MeVVA Trigger": ["0","1","0","4","1.992", "1"],
                                   "DO: Trigger 0": ["0","1","0","1","0", "0"],
                                   "DO: Trigger 1": ["0","1","0","1","0", "0"],
                                   "AO: Trigger 1": ["0","1","0","1","0", "0"],
@@ -585,7 +585,7 @@ class Dialog(QDialog):
     def start_timing_loop(self):
         """Sends timing information entered into the GUI timing loop boxes to EbitVoltageController, where the voltages
         are scaled and converted to the PCIe clock frequency."""
-        if self.ebit_controller.check_for_ramp():
+        if self.ebit_controller.ramp_task is not None:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setText(
@@ -993,7 +993,7 @@ class Dialog(QDialog):
                 msg.exec()
 
     def start_timing_loop_custom(self):
-        if self.ebit_controller.check_for_ramp:
+        if self.ebit_controller.ramp_task is not None:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Information)
             msg.setText(
