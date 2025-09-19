@@ -11,6 +11,26 @@ from scipy.signal import butter, lfilter
 
 from EbitDataModel import EbitDataModel
 
+import sys
+GUI_ONLY = '--gui-only'in sys.argv
+
+import functools
+
+def shortcircuit(disable: bool, result=None):
+    """
+    Decorator to either run a function normally or outright return a default value.
+
+    disable -- if true then return result, otherwise run function normally
+    result -- value to return when disable is true
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if disable:
+                return result
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 class EbitVoltageController:
     tasks = {}
@@ -22,6 +42,7 @@ class EbitVoltageController:
     def __init__(self, ebit_data_model:  EbitDataModel):
         self.ebit_data_model = ebit_data_model
 
+    @shortcircuit(GUI_ONLY)
     def stop_timing_loop(self):
         if "ao_timing" in self.tasks:
             ao_task = self.tasks.pop("ao_timing")
@@ -39,6 +60,7 @@ class EbitVoltageController:
                 self.set_digital(component_name, False)
             self.do_components_in_task = []
 
+    @shortcircuit(GUI_ONLY)
     def start_timing_loop(self, ao_plans, ao_trigger_plans, do_plans, cycle_time, frequency=200000, enable_lpf=False):
         """
         This function takes in lists of timing loop "plans":
@@ -161,6 +183,7 @@ class EbitVoltageController:
         self.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
 
+    @shortcircuit(GUI_ONLY)
     def start_custom_timing_loop(self, custom_timing_plan, frequency=200000, enable_lpf=False):
         #This function takes in lists of timing loop "plans":
         #  e.g., ao_plans = [ {Drifttube2, ramp_duration, ramp_width, delay_duration, low_voltage, high_voltage}, {...}]
@@ -286,9 +309,11 @@ class EbitVoltageController:
         self.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
 
+    @shortcircuit(GUI_ONLY)
     @staticmethod
     def send_command(ao_command: list[list], ao_task: Task | None, do_command: list[list], do_task: Task | None,
                      frequency: int) -> None:
+
 
         if len(ao_command) == 1:
             ao_command = ao_command[0]
@@ -312,6 +337,7 @@ class EbitVoltageController:
             do_task.write(do_command, auto_start=False)
             do_task.start()
 
+    @shortcircuit(GUI_ONLY)
     def clear_all_voltages(self, turn_off_mevva_trigger_power=False):
 
         self.stop_timing_loop()
@@ -346,6 +372,7 @@ class EbitVoltageController:
                 self.ebit_data_model.components[name].output_voltage_comp = 0
                 print("Turning off MeVVA Trigger Power")
 
+    @shortcircuit(GUI_ONLY, [1])
     def set_voltage(self, name, new_value_v, ramp_vs=0):
 
         model = self.ebit_data_model.components[name]
@@ -419,6 +446,7 @@ class EbitVoltageController:
             self.ebit_data_model.components[name].output_voltage_value = float(new_value)
         return [1]
 
+    @shortcircuit(GUI_ONLY, 0)
     def ramp_done_callback(self):
         #this gets called automatically when a voltage ramp completes, or can be called early to end the ramp.
         self.ramp_task.close()
@@ -426,6 +454,7 @@ class EbitVoltageController:
         print("Voltage ramp stopped.")
         return 0
 
+    @shortcircuit(GUI_ONLY)
     def read_all_voltages(self):
         for key, value in self.ebit_data_model.components.items():
             model = self.ebit_data_model.components[key]
@@ -453,6 +482,7 @@ class EbitVoltageController:
                         value.input_current_value = None
                         print(f"Error reading {key} current.")
 
+    @shortcircuit(GUI_ONLY)
     def set_digital(self, name, new_value):
         model = self.ebit_data_model.components[name]
         new_value = bool(new_value)
@@ -462,7 +492,7 @@ class EbitVoltageController:
             task.write(new_value)
             task.wait_until_done()
 
-
+@shortcircuit(GUI_ONLY)
 def butter_lowpass_filter(signal: Union[npt.NDArray, list], fs: float, cutoff: float = 1000, order: int = 3):
     if isinstance(signal, list):
         signal = np.array(signal)
