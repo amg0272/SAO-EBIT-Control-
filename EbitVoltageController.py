@@ -309,8 +309,8 @@ class EbitVoltageController:
         EbitVoltageController.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
 
-    @shortcircuit(GUI_ONLY)
     @staticmethod
+    @shortcircuit(GUI_ONLY)
     def send_command(ao_command: list[list], ao_task: Task | None, do_command: list[list], do_task: Task | None,
                      frequency: int) -> None:
 
