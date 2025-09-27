@@ -91,10 +91,10 @@ class EbitVoltageController:
             do_task = None
 
         # ao_command and do_command are lists of lists telling each ao/do port to do
-        ao_command = []
-        do_command = []
+        ao_command = np.empty((len(ao_plans) + len(ao_trigger_plans), total_samples))
+        do_command = np.empty((len(do_plans), total_samples), dtype=bool)
 
-        for ao_plan in ao_plans:
+        for pn, ao_plan in enumerate(ao_plans):
             component_name = ao_plan['component_name']
             ramp_duration = ao_plan['ramp_duration']  #seconds
             ramp_width = ao_plan['ramp_width']  #seconds
@@ -115,16 +115,23 @@ class EbitVoltageController:
             delay_steps = int(delay_duration * frequency)
 
             # delay, ramp up, hold, ramp down
-            full_command = []
-            full_command += [low_voltage] * delay_steps
-            full_command += np.linspace(low_voltage, high_voltage, num=num_ramp_steps).tolist()
-            full_command += [high_voltage] * num_width_steps
-            full_command += np.linspace(high_voltage, low_voltage, num=num_ramp_steps).tolist()
+            full_command = ao_command[pn]
+            i = 0
+            
+            full_command[:delay_steps] = low_voltage
+            i += delay_steps
 
-            wait_steps = total_samples - len(full_command)  # remaining samples until we fill out the total time
-            assert wait_steps >= 0
-            wait_array = [low_voltage] * wait_steps
-            full_command += wait_array
+            full_command[i:(i+num_ramp_steps)] = np.linspace(low_voltage, high_voltage, num=num_ramp_steps)
+            i += num_ramp_steps
+
+            full_command[i:(i+num_width_steps)] = high_voltage
+            i += num_width_steps
+
+            full_command[i:(i+num_ramp_steps)] = np.linspace(high_voltage, low_voltage, num=num_ramp_steps)
+            i += num_ramp_steps
+    
+            assert i <= total_samples
+            full_command[i:] = low_voltage
 
             if enable_lpf:
                 full_command = butter_lowpass_filter(full_command, frequency)
@@ -133,10 +140,9 @@ class EbitVoltageController:
                                                     min_val=model.output_min_volts,
                                                     max_val=model.output_max_volts)
 
-            full_command = np.clip(full_command, model.output_min_volts, model.output_max_volts).tolist()
-            ao_command.append(full_command)
+            np.clip(full_command, model.output_min_volts, model.output_max_volts, out=full_command)
 
-        for do_plan in do_plans:
+        for pn, do_plan in enumerate(do_plans):
             component_name = do_plan['component_name']
             model = self.ebit_data_model.components[component_name]
             self.do_components_in_task.append(component_name)
@@ -144,19 +150,22 @@ class EbitVoltageController:
             delay_steps = int(frequency * do_plan['delay_duration'])
             num_width_steps = int(frequency * do_plan['ramp_width'])
 
-            full_command = []
-            full_command += [False] * delay_steps
-            full_command += [True] * num_width_steps
+            full_command = do_command[pn]
+            i = 0
 
-            wait_steps = total_samples - len(full_command)  # remaining samples until we fill out the total time
-            assert wait_steps >= 0 # TODO: Check for this much earlier from the ramp_width/delay_duration
-            full_command += [False] * wait_steps
+            full_command[:delay_steps] = False
+            i += delay_steps
+
+            full_command[i:(i+num_width_steps)] = True
+            i += num_width_steps
+
+            assert i <= total_samples
+            full_command[i:] = False
 
             do_task.do_channels.add_do_chan(f'{model.output_card}/{model.output_pin}',
                                             line_grouping=LineGrouping.CHAN_PER_LINE)
-            do_command.append(full_command)
 
-        for ao_trigger_plan in ao_trigger_plans:
+        for pn, ao_trigger_plan in enumerate(ao_trigger_plans, len(ao_plans)):
             component_name = ao_trigger_plan['component_name']
 
             model = self.ebit_data_model.components[component_name]
@@ -165,20 +174,23 @@ class EbitVoltageController:
             delay_steps = int(ao_trigger_plan['delay_duration'] * frequency)
             num_width_steps = int(frequency * ao_trigger_plan['ramp_width'])
 
-            full_command = []
-            full_command += [0] * delay_steps
-            full_command += [5] * num_width_steps
+            assert pn >= len(ao_plans)
+            full_command = ao_command[pn]
+            i = 0
 
-            wait_steps = total_samples - len(full_command)  # remaining samples until we fill out the total time
-            assert wait_steps >= 0
-            wait_array = [0] * wait_steps
-            full_command.extend(wait_array)
+            full_command[:delay_steps] = 0
+            i += delay_steps
+
+            full_command[i:(i+num_width_steps)] = 5
+            i += num_width_steps
+    
+            assert i <= total_samples
+            full_command[i:] = 0
 
             ao_task.ao_channels.add_ao_voltage_chan(f'{model.output_card}/{model.output_pin}',
                                                     min_val=model.output_min_volts,
                                                     max_val=model.output_max_volts)
-            full_command = np.clip(full_command, model.output_min_volts, model.output_max_volts).tolist()
-            ao_command.append(full_command)
+            np.clip(full_command, model.output_min_volts, model.output_max_volts, out=full_command)
 
         EbitVoltageController.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
@@ -311,7 +323,7 @@ class EbitVoltageController:
 
     @staticmethod
     @shortcircuit(GUI_ONLY)
-    def send_command(ao_command: list[list], ao_task: Task | None, do_command: list[list], do_task: Task | None,
+    def send_command(ao_command: Union[list[list], npt.NDArray], ao_task: Task | None, do_command: Union[list[list], npt.NDArray], do_task: Task | None,
                      frequency: int) -> None:
 
 
