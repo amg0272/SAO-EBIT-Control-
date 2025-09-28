@@ -137,7 +137,7 @@ class EbitVoltageController:
             full_command[i:] = low_voltage
 
             if enable_lpf:
-                full_command = butter_lowpass_filter(full_command, frequency)
+                full_command[:] = butter_lowpass_filter(full_command, frequency)
 
             ao_task.ao_channels.add_ao_voltage_chan(f'{model.output_card}/{model.output_pin}',
                                                     min_val=model.output_min_volts,
