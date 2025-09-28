@@ -93,6 +93,9 @@ class EbitVoltageController:
         # ao_command and do_command are lists of lists telling each ao/do port to do
         ao_command = np.empty((len(ao_plans) + len(ao_trigger_plans), total_samples))
         do_command = np.empty((len(do_plans), total_samples), dtype=bool)
+        
+        ao_clip_min = np.empty_like(ao_command)
+        ao_clip_max = np.empty_like(ao_command)
 
         for pn, ao_plan in enumerate(ao_plans):
             component_name = ao_plan['component_name']
@@ -139,8 +142,9 @@ class EbitVoltageController:
             ao_task.ao_channels.add_ao_voltage_chan(f'{model.output_card}/{model.output_pin}',
                                                     min_val=model.output_min_volts,
                                                     max_val=model.output_max_volts)
-
-            np.clip(full_command, model.output_min_volts, model.output_max_volts, out=full_command)
+            ao_clip_min[pn, :] = model.output_min_volts
+            ao_clip_max[pn, :] = model.output_max_volts
+            #np.clip(full_command, model.output_min_volts, model.output_max_volts, out=full_command)
 
         for pn, do_plan in enumerate(do_plans):
             component_name = do_plan['component_name']
@@ -190,7 +194,12 @@ class EbitVoltageController:
             ao_task.ao_channels.add_ao_voltage_chan(f'{model.output_card}/{model.output_pin}',
                                                     min_val=model.output_min_volts,
                                                     max_val=model.output_max_volts)
-            np.clip(full_command, model.output_min_volts, model.output_max_volts, out=full_command)
+
+            ao_clip_min[pn, :] = model.output_min_volts
+            ao_clip_max[pn, :] = model.output_max_volts
+            #np.clip(full_command, model.output_min_volts, model.output_max_volts, out=full_command)
+
+        np.clip(ao_command, ao_clip_min, ao_clip_max, out=ao_command)
 
         EbitVoltageController.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
