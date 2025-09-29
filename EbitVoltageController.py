@@ -180,7 +180,7 @@ class EbitVoltageController:
             full_command = np.clip(full_command, model.output_min_volts, model.output_max_volts).tolist()
             ao_command.append(full_command)
 
-        self.send_command(ao_command, ao_task, do_command, do_task, frequency)
+        EbitVoltageController.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
 
     @shortcircuit(GUI_ONLY)
@@ -306,11 +306,11 @@ class EbitVoltageController:
 
             ao_command.append(full_command)
 
-        self.send_command(ao_command, ao_task, do_command, do_task, frequency)
+        EbitVoltageController.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
 
-    @shortcircuit(GUI_ONLY)
     @staticmethod
+    @shortcircuit(GUI_ONLY)
     def send_command(ao_command: list[list], ao_task: Task | None, do_command: list[list], do_task: Task | None,
                      frequency: int) -> None:
 
