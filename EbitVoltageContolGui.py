@@ -339,7 +339,11 @@ class Dialog(QDialog):
         start_stop_box = QGroupBox()
         start_stop_layout = QVBoxLayout()
         start_button = QPushButton("Start")
-        start_button.clicked.connect(self.start_timing_loop)
+        def _prof():
+            pr = cProfile.Profile()
+            pr.runcall(self.start_timing_loop)
+            pr.dump_stats('stats.perf')
+        start_button.clicked.connect(_prof)
         start_stop_layout.addWidget(start_button)
 
         stop_button = QPushButton("Stop")
@@ -647,11 +651,6 @@ class Dialog(QDialog):
         if (len(AO_plans)+len(DO_plans)+len(AO_trigger_plans)) > 0:
             self.update_timing_cycle_plot()
             
-            pr = cProfile.Profile()
-
-            pr.runcall(self.ebit_controller.start_timing_loop, AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_lpf=self.enable_low_pass_filter)
-
-            pr.dump_stats('stats.txt')
 
             #self.ebit_controller.start_timing_loop(AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_lpf=self.enable_low_pass_filter)
             self.timing_loop_start_stop_widgets["start_button"].setEnabled(False)
