@@ -8,7 +8,7 @@ import datetime
 import csv
 
 from slack_sdk.webhook import WebhookClient
-import pyqtgraph as pg #put this before pyside so that pyqtgraph uses pyqt instead of pyside (for interactive plots)
+#import pyqtgraph as pg #put this before pyside so that pyqtgraph uses pyqt instead of pyside (for interactive plots)
 from PyQt6.QtCore import QTimer, QCoreApplication
 from PyQt6.QtWidgets import (QApplication, QDialog,
                              QGridLayout, QGroupBox,
@@ -21,8 +21,8 @@ from EbitVoltageController import SimulatedEbitVoltageController, EbitVoltageCon
 from LabJackTemps import TemperatureReader
 import matplotlib.colors as mcolors
 
-pg.setConfigOptions(antialias=True)
-pg.setConfigOptions(useOpenGL=True)
+#pg.setConfigOptions(antialias=True)
+#pg.setConfigOptions(useOpenGL=True)
 #todo: add HV interlock?
 class Dialog(QDialog):
     input_widgets = {} #text box widgets to set voltages on individual components
@@ -334,6 +334,24 @@ class Dialog(QDialog):
 
         # layout.setColumnStretch(1, 10)
         # layout.setColumnStretch(2, 20)
+        timing_group_box = QGroupBox()
+        timing_layout = QVBoxLayout()
+
+        timing_layout.addWidget(QLabel("Cycle Time (s)"))
+        timing_cycle_time_box = QLineEdit("1")
+        timing_layout.addWidget(timing_cycle_time_box)
+
+        timing_cycle_button = QPushButton("Apply")
+        timing_cycle_button.clicked.connect(self.update_timing_cycle_value)
+        self._timing_cycle_time_s = 1
+        timing_layout.addWidget(timing_cycle_button)
+
+        self.timing_cycle_widgets = {"timing_cycle_time_box":timing_cycle_time_box, "timing_cycle_button":timing_cycle_button}
+#            #timing_voltage_plot.plot(this_data)
+        timing_group_box.setLayout(timing_layout)
+        layout.addWidget(timing_group_box, 2, 7, 3, 1)
+        self._grid_group_timingloop_box.setLayout(layout)
+
         start_stop_box = QGroupBox()
         start_stop_layout = QVBoxLayout()
         start_button = QPushButton("Start")
@@ -346,7 +364,7 @@ class Dialog(QDialog):
         start_stop_layout.addWidget(stop_button)
         self.timing_loop_start_stop_widgets = {"start_button":start_button, "stop_button":stop_button}
         start_stop_box.setLayout(start_stop_layout)
-        layout.addWidget(start_stop_box, 2, 7, 3, 1)
+        layout.addWidget(start_stop_box, 7, 7, 3, 1)
 
         load_clear_box = QGroupBox()
         load_clear_layout = QVBoxLayout()
@@ -360,39 +378,8 @@ class Dialog(QDialog):
         load_clear_layout.addWidget(clear_button)
         self.timing_loop_load_clear_widgets = {"load_button":load_button, "clear_button":clear_button}
         load_clear_box.setLayout(load_clear_layout)
-        layout.addWidget(load_clear_box, 5, 7, 3, 1)
+        layout.addWidget(load_clear_box, 10, 7, 3, 1)
 
-        timing_group_box = QGroupBox()
-        timing_layout = QGridLayout()
-
-        timing_layout.addWidget(QLabel("Cycle Time (s)"), 1,0)
-        timing_cycle_time_box = QLineEdit("1")
-        timing_layout.addWidget(timing_cycle_time_box, 2,0)
-
-        timing_cycle_button = QPushButton("Apply")
-        timing_cycle_button.clicked.connect(self.update_timing_cycle_value)
-        self._timing_cycle_time_s = 1
-        timing_layout.addWidget(timing_cycle_button, 3,0)
-
-        timing_redraw_button = QPushButton("Update plot")
-        timing_redraw_button.clicked.connect(self.update_timing_cycle_plot)
-        #timing_layout.addWidget(timing_redraw_button, 4,0)
-
-        self.timing_voltage_plot = pg.PlotWidget()
-        self.timing_voltage_plot.addLegend(offset=[-1,1], verSpacing=-5, horSpacing=20)
-        timing_layout.addWidget(self.timing_voltage_plot, 1,1, -1, -1)
-        timing_layout.setColumnStretch(1, 2)
-        timing_layout.setRowStretch(1, 2)
-        timing_layout.setRowMinimumHeight(1, 120)
-
-        self.update_timing_cycle_plot()
-
-        self.timing_cycle_widgets = {"timing_cycle_time_box":timing_cycle_time_box, "timing_cycle_button":timing_cycle_button, "timing_redraw_button":timing_redraw_button}
-            #timing_voltage_plot.plot(this_data)
-        timing_layout.setColumnStretch(1,1)
-        timing_group_box.setLayout(timing_layout)
-        layout.addWidget(timing_group_box, i+3, 0, -1, -1)
-        self._grid_group_timingloop_box.setLayout(layout)
 
     def update_timing_cycle_value(self):
         """Sets the total cycle time to what is in the text box and redraws the timing plot."""
@@ -402,7 +389,7 @@ class Dialog(QDialog):
             new_timing_value_s = float(widgets["timing_cycle_time_box"].text())
             self._timing_cycle_time_s = new_timing_value_s
             try:
-                if not self.update_timing_cycle_plot():
+                if False: #not self.update_timing_cycle_plot():
                     print("Error updating plot.")
             except Exception as e:
                 print("Error updating plot:", e)
@@ -411,8 +398,8 @@ class Dialog(QDialog):
 
     def update_timing_cycle_plot(self):
         """Redraws the timing plot at the bottom of the screen."""
-        self.timing_voltage_plot.clear()
-        legend = self.timing_voltage_plot.addLegend(offset=[-1,-1], verSpacing=-5, horSpacing=20)
+#        self.timing_voltage_plot.clear()
+#        legend = self.timing_voltage_plot.addLegend(offset=[-1,-1], verSpacing=-5, horSpacing=20)
 
         frequency = 200000 #the NI card runs at 200,000 Hz
         total_pts = int(frequency * self._timing_cycle_time_s)
@@ -478,19 +465,19 @@ class Dialog(QDialog):
                 v_range = (max(full_command)-min(full_command)) if ((max(full_command)-min(full_command))!=0.0) else max(full_command) #if there is only one voltage for the loop, we want to avoid a divide by 0 error
                 reduced_ramp_voltages = (np.array(full_command) - min(full_command)) / v_range
                 xs = np.linspace(0, int(self._timing_cycle_time_s*1000), num=int(self._timing_cycle_time_s*frequency), endpoint=False)
-                self.timing_voltage_plot.plot(xs, reduced_ramp_voltages-1.5*numPlotted, name = component_name, pen={'color':pg.intColor(i), 'width':2})
+#                #self.timing_voltage_plot.plot(xs, reduced_ramp_voltages-1.5*numPlotted, name = component_name, pen={'color':pg.intColor(i), 'width':2})
         #legend.setScale(1.5-(0.07*numPlotted))
-        legend.setColumnCount(int(np.ma.ceil(numPlotted/6)))
-        self.timing_voltage_plot.setXRange(0, int(self._timing_cycle_time_s*1000))
-        self.timing_voltage_plot.setYRange(-1.5*(numPlotted)-0.5, 1.1)
-        self.timing_voltage_plot.setLimits(xMin=-1, xMax=int(self._timing_cycle_time_s*1000))
-        self.timing_voltage_plot.setMouseEnabled(y=False)
+        #legend.setColumnCount(int(np.ma.ceil(numPlotted/6)))
+#        self.timing_voltage_plot.setXRange(0, int(self._timing_cycle_time_s*1000))
+#        self.timing_voltage_plot.setYRange(-1.5*(numPlotted)-0.5, 1.1)
+#        self.timing_voltage_plot.setLimits(xMin=-1, xMax=int(self._timing_cycle_time_s*1000))
+#        self.timing_voltage_plot.setMouseEnabled(y=False)
         return(1)
 
     def update_timing_cycle_plot_custom(self):
         """Plots timing sequences loaded from a .csv file."""
-        self.timing_voltage_plot.clear()
-        legend = self.timing_voltage_plot.addLegend(offset=[-1,-1], verSpacing=-5, horSpacing=20)
+#        self.timing_voltage_plot.clear()
+#        legend = self.timing_voltage_plot.addLegend(offset=[-1,-1], verSpacing=-5, horSpacing=20)
         cycle_time = self.custom_timing_plan["time_s"]
 
         frequency = 200000#1000 #each point represents one ms for plotting purposes only
@@ -534,7 +521,7 @@ class Dialog(QDialog):
                             msg.setText(
                                 f"There are repeated times in the timing sequence. Times must increment at each step.")
                             self.clear_custom_timing_loop()
-                            self.update_timing_cycle_plot()
+                            #self.update_timing_cycle_plot()
                             msg.exec()
                             return 0
                         dv = abs((vs[0] - vs[-1]))
@@ -544,7 +531,7 @@ class Dialog(QDialog):
                             msg.setText(
                                 f"High Voltage slew rate of {dv/dt} V/ms exceeds the maximum of {self.trek_slew_rate} V/ms.")
                             self.clear_custom_timing_loop()
-                            self.update_timing_cycle_plot()
+                            #self.update_timing_cycle_plot()
                             msg.exec()
                             return 0
                     else:
@@ -573,12 +560,12 @@ class Dialog(QDialog):
             numPlotted += 1
             reduced_ramp_voltages = (np.array(full_command) - min(full_command)) / (max(full_command)-min(full_command))
             xs = np.linspace(0, int(cycle_time*1000), num=total_pts, endpoint=False)
-            self.timing_voltage_plot.plot(xs, reduced_ramp_voltages - 1.5 * numPlotted, name=component_name, pen={'color':pg.intColor(i), 'width':2})
-        legend.setColumnCount(int(np.ma.ceil(numPlotted / 6)))
-        self.timing_voltage_plot.setXRange(0, cycle_time*1000)
-        self.timing_voltage_plot.setYRange(-1.5*(numPlotted), 1.1)
-        self.timing_voltage_plot.setLimits(xMin=-1, xMax=cycle_time*1000)
-        self.timing_voltage_plot.setMouseEnabled(y=False)
+#            #self.timing_voltage_plot.plot(xs, reduced_ramp_voltages - 1.5 * numPlotted, name=component_name, pen={'color':pg.intColor(i), 'width':2})
+        #legend.setColumnCount(int(np.ma.ceil(numPlotted / 6)))
+#        self.timing_voltage_plot.setXRange(0, cycle_time*1000)
+#        self.timing_voltage_plot.setYRange(-1.5*(numPlotted), 1.1)
+#        self.timing_voltage_plot.setLimits(xMin=-1, xMax=cycle_time*1000)
+#        self.timing_voltage_plot.setMouseEnabled(y=False)
         self.timing_cycle_widgets["timing_cycle_time_box"].setText(str(self.custom_timing_plan["time_s"]))
         return 1
 
@@ -643,7 +630,7 @@ class Dialog(QDialog):
                 widgets["checkbox"].setEnabled(False)
 
         if (len(AO_plans)+len(DO_plans)+len(AO_trigger_plans)) > 0:
-            self.update_timing_cycle_plot()
+            #self.update_timing_cycle_plot()
             self.ebit_controller.start_timing_loop(AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_lpf=self.enable_low_pass_filter)
             self.timing_loop_start_stop_widgets["start_button"].setEnabled(False)
             self.timing_loop_start_stop_widgets["stop_button"].setEnabled(True)
@@ -957,12 +944,11 @@ class Dialog(QDialog):
             voltages = timing_csv[component_name]
             voltages = [v for v in voltages if not pd.isna(v)] #remove NaN values
             self.custom_timing_plan[component_name] = [times_ms, voltages]
-        if self.update_timing_cycle_plot_custom():
+        if False: #self.update_timing_cycle_plot_custom():
             if (len(self.custom_timing_plan)) > 1: #Time (ms) is always included
                 self.timing_cycle_widgets["timing_cycle_time_box"].setEnabled(False)
                 #self.timing_cycle_widgets["timing_cycle_time_box"].setText(str(self._timing_cycle_time_s))
                 self.timing_cycle_widgets["timing_cycle_button"].setEnabled(False)
-                self.timing_cycle_widgets["timing_redraw_button"].setEnabled(False)
 
                 for component_name, widgets in self.timing_loop_widgets.items():
                     widgets["ramp_duration"].setStyleSheet("background-color: gray;")
@@ -1024,7 +1010,6 @@ class Dialog(QDialog):
         self.timing_cycle_widgets["timing_cycle_time_box"].setEnabled(True)
         self.timing_cycle_widgets["timing_cycle_time_box"].setText(str(self._timing_cycle_time_s))
         self.timing_cycle_widgets["timing_cycle_button"].setEnabled(True)
-        self.timing_cycle_widgets["timing_redraw_button"].setEnabled(True)
 
         rowColors = ['white', 'lightsteelblue']
         disableColors = ['lightgrey', 'grey']
