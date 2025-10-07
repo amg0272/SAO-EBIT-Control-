@@ -652,7 +652,7 @@ class Dialog(QDialog):
             self.update_timing_cycle_plot()
             
 
-            #self.ebit_controller.start_timing_loop(AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_lpf=self.enable_low_pass_filter)
+            self.ebit_controller.start_timing_loop(AO_plans, AO_trigger_plans, DO_plans, self._timing_cycle_time_s, enable_lpf=self.enable_low_pass_filter)
             self.timing_loop_start_stop_widgets["start_button"].setEnabled(False)
             self.timing_loop_start_stop_widgets["stop_button"].setEnabled(True)
             self.timing_cycle_widgets["timing_cycle_time_box"].setEnabled(False)
