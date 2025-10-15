@@ -826,8 +826,8 @@ class Dialog(QDialog):
         self.timing_loop_start_stop_widgets["stop_button"].setEnabled(False)
         self.timing_cycle_widgets["timing_cycle_time_box"].setEnabled(True)
         self.timing_cycle_widgets["timing_cycle_button"].setEnabled(True)
-        self.timing_cycle_widgets["timing_cycle_button"].click() #reset the plot to the regular timing stuff
-        self.timing_cycle_widgets["timing_cycle_button"].click() #have to click it twice for some reason
+        #self.timing_cycle_widgets["timing_cycle_button"].click() #reset the plot to the regular timing stuff
+        #self.timing_cycle_widgets["timing_cycle_button"].click() #have to click it twice for some reason
 
         self.timing_loop_load_clear_widgets["load_button"].setEnabled(True)
         self.timing_loop_load_clear_widgets["clear_button"].setEnabled(False)
