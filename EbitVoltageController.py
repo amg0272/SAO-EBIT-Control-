@@ -56,7 +56,7 @@ class EbitVoltageController:
                 else:
                     static_value = 0
 
-                self.set_voltage(component_name, static value)
+                self.set_voltage(component_name, static_value)
             self.ao_components_in_task = []
 
         if "do_timing" in self.tasks:
