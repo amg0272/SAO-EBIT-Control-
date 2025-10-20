@@ -49,7 +49,14 @@ class EbitVoltageController:
             ao_task.stop()
             ao_task.close()
             for component_name in self.ao_components_in_task:
-                self.set_voltage(component_name, 0)
+                model = self.ebit_data_model.components[component_name]
+
+                if model.output_voltage_value is not None:
+                    static_value = (model.output_voltage_value - model.output_voltage_y_intercept) / model.output_voltage_slope
+                else:
+                    static_value = 0
+
+                self.set_voltage(component_name, static value)
             self.ao_components_in_task = []
 
         if "do_timing" in self.tasks:
