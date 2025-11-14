@@ -44,7 +44,7 @@ try:
 except FileExistsError as _:
     pass
 dt = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
-logging.basicConfig(f'logs/{dt}.log', level=logging.DEBUG)
+logging.basicConfig(filename=f'logs/{dt}.log', level=logging.DEBUG)
 
 class EbitVoltageController:
     tasks = {}
