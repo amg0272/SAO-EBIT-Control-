@@ -33,7 +33,7 @@ def shortcircuit(disable: bool, result=None):
     return decorator
 
 
-import datetime
+from datetime import datetime
 import logging
 import os
 
@@ -43,13 +43,14 @@ try:
     os.mkdir('logs')
 except FileExistsError as _:
     pass
-logging.basicConfig(f'logs/{datetime.strftime('%Y-%m-%d-%H:%M:%S')}.log', level=logging.DEBUG)
+dt = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
+logging.basicConfig(f'logs/{dt}.log', level=logging.DEBUG)
 
 class EbitVoltageController:
     tasks = {}
     ao_components_in_task = []
     do_components_in_task = []
-    ebit_data_model: EbitDataModesl
+    ebit_data_model: EbitDataModel
     ramp_task: Task | None = None
 
     def __init__(self, ebit_data_model:  EbitDataModel):
