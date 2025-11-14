@@ -38,13 +38,12 @@ import logging
 import os
 
 logger = logging.getLogger('EbitVoltageController')
-fmt = logging.Formatter('%(asctime)s::%(name)s::$(levelname)s::$(lineno)d::$(message)s')
 try:
-    os.mkdir('logs')
+    os.mkdir('dlogs')
 except FileExistsError as _:
     pass
-dt = datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
-logging.basicConfig(filename=f'logs/{dt}.log', level=logging.DEBUG)
+dt = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+logging.basicConfig(filename=f'dlogs/{dt}.log', filemode='w', level=logging.DEBUG, format='%(asctime)s::%(name)s::%(levelname)s::%(lineno)d::%(message)s')
 
 class EbitVoltageController:
     tasks = {}
