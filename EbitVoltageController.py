@@ -32,11 +32,24 @@ def shortcircuit(disable: bool, result=None):
         return wrapper
     return decorator
 
+
+import datetime
+import logging
+import os
+
+logger = logging.getLogger('EbitVoltageController')
+fmt = logging.Formatter('%(asctime)s::%(name)s::$(levelname)s::$(lineno)d::$(message)s')
+try:
+    os.mkdir('logs')
+except FileExistsError as _:
+    pass
+logging.basicConfig(f'logs/{datetime.strftime('%Y-%m-%d-%H:%M:%S')}.log', level=logging.DEBUG)
+
 class EbitVoltageController:
     tasks = {}
     ao_components_in_task = []
     do_components_in_task = []
-    ebit_data_model: EbitDataModel
+    ebit_data_model: EbitDataModesl
     ramp_task: Task | None = None
 
     def __init__(self, ebit_data_model:  EbitDataModel):
@@ -66,6 +79,8 @@ class EbitVoltageController:
             for component_name in self.do_components_in_task:
                 self.set_digital(component_name, False)
             self.do_components_in_task = []
+
+        logger.debug('timing loop stopped')
 
     @shortcircuit(GUI_ONLY)
     def start_timing_loop(self, ao_plans, ao_trigger_plans, do_plans, cycle_time, frequency=200000, enable_lpf=False):
@@ -100,6 +115,10 @@ class EbitVoltageController:
         # ao_command and do_command are lists of lists telling each ao/do port to do
         ao_command = []
         do_command = []
+
+        logger.debug("Starting timing loop")
+        logger.debug(f'ao_components_in_task before: {self.ao_components_in_task}')
+        logger.debug(f'do_components_in_task before: {self.do_components_in_task}')
 
         for ao_plan in ao_plans:
             component_name = ao_plan['component_name']
@@ -186,6 +205,9 @@ class EbitVoltageController:
                                                     max_val=model.output_max_volts)
             full_command = np.clip(full_command, model.output_min_volts, model.output_max_volts).tolist()
             ao_command.append(full_command)
+
+        logger.debug(f'ao_components_in_task after: {self.ao_components_in_task}')
+        logger.debug(f'do_components_in_task after: {self.do_components_in_task}')
 
         EbitVoltageController.send_command(ao_command, ao_task, do_command, do_task, frequency)
         return None
@@ -382,28 +404,40 @@ class EbitVoltageController:
     @shortcircuit(GUI_ONLY, [1])
     def set_voltage(self, name, new_value_v, ramp_vs=0):
 
+        logger.debug(f'set_voltage called with {name=}, {new_value_v=}, {ramp_vs=}')
+        logger.debug(f'{self.ao_components_in_task=}')
+        logger.debug(f'{self.do_components_in_task=}')
+
         model = self.ebit_data_model.components[name]
         new_value = float(new_value_v)
         new_value = new_value * model.output_voltage_slope + model.output_voltage_y_intercept
 
         if new_value > model.output_max_volts:
-            print(f"Caution: Voltage {new_value} exceeds maximum voltage ({model.output_max_volts}) for {name}.")
+            msg = f"Caution: Voltage {new_value} exceeds maximum voltage ({model.output_max_volts}) for {name}."
+            print(msg)
+            logger.debug(msg)
             start = self.ebit_data_model.components[name].output_voltage_value
             start_v = (start - model.output_voltage_y_intercept) / model.output_voltage_slope
             return [0, new_value, model.output_max_volts, start_v]
         elif new_value < model.output_min_volts:
-            print(f"Caution: Voltage {new_value} is less than minimum voltage ({model.output_min_volts}) for {name}.")
+            msg =f"Caution: Voltage {new_value} is less than minimum voltage ({model.output_min_volts}) for {name}."
+            print(msg)
+            logger.info(msg)
             start = self.ebit_data_model.components[name].output_voltage_value
             start_v = (start - model.output_voltage_y_intercept) / model.output_voltage_slope
             return [0, new_value, model.output_min_volts, start_v]
         if self.ramp_task is not None:
-            print("A voltage ramp is already in progress. Voltage not changed.")
+            msg = "A voltage ramp is already in progress. Voltage not changed."
+            print(msg)
+            logger.info(msg)
             start = self.ebit_data_model.components[name].output_voltage_value
             start_v = (start - model.output_voltage_y_intercept) / model.output_voltage_slope
             return [2, start_v]
         if (ramp_vs != 0) and (len(self.ao_components_in_task) + len(
                 self.do_components_in_task)):  #if there is a timing loop in progress and we want to try and ramp
-            print("A timing loop is already in progress, so a ramp cannot be started. Voltage not changed.")
+            msg = "A timing loop is already in progress, so a ramp cannot be started. Voltage not changed."
+            print(msg)
+            logger.info(msg)
             start = self.ebit_data_model.components[name].output_voltage_value
             start_v = (start - model.output_voltage_y_intercept) / model.output_voltage_slope
             return [3, start_v]
@@ -412,7 +446,9 @@ class EbitVoltageController:
                 task.ao_channels.add_ao_voltage_chan(f'{model.output_card}/{model.output_pin}',
                                                      min_val=model.output_min_volts,
                                                      max_val=model.output_max_volts)
-                print("SETTING VOLTAGE: ", name, new_value)
+                msg = f"SETTING VOLTAGE: {name}, {new_value}"
+                print(msg)
+                logger.info(msg)
                 task.write(new_value)
                 task.wait_until_done()
                 self.ebit_data_model.components[name].output_voltage_value = float(new_value)
@@ -423,7 +459,9 @@ class EbitVoltageController:
                                                            max_val=model.output_max_volts)
             start = self.ebit_data_model.components[name].output_voltage_value
             start_v = (start - model.output_voltage_y_intercept) / model.output_voltage_slope
-            print("RAMPING VOLTAGE: ", name, "from", start_v, "to", new_value_v, "V at", ramp_vs, "V/s.")
+            msg = f"RAMPING VOLTAGE: {name} from {start_v}V to {new_value_v}V at {ramp_vs}V/s."
+            print(msg)
+            logger.info(msg)
             frequency = 200000
 
             ramp_duration = abs(new_value_v - start_v) / ramp_vs  # seconds
